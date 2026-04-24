@@ -15,6 +15,7 @@ import { AuthInProgress } from '../auth/AuthInProgress.js';
 import { AuthDialog } from '../auth/AuthDialog.js';
 import { BannedAccountDialog } from '../auth/BannedAccountDialog.js';
 import { ApiAuthDialog } from '../auth/ApiAuthDialog.js';
+import { OllamaModelDialog } from '../auth/OllamaModelDialog.js';
 import { EditorSettingsDialog } from './EditorSettingsDialog.js';
 import { PrivacyNotice } from '../privacy/PrivacyNotice.js';
 import { ProQuotaDialog } from './ProQuotaDialog.js';
@@ -297,6 +298,18 @@ export const DialogManager = ({
           onCancel={uiActions.handleApiKeyCancel}
           error={uiState.authError}
           defaultValue={uiState.apiKeyDefaultValue}
+        />
+      </Box>
+    );
+  }
+
+  if (uiState.isAwaitingOllamaModelSelection) {
+    return (
+      <Box flexDirection="column">
+        <OllamaModelDialog
+          ollamaHost={uiState.ollamaHost}
+          onSelect={uiActions.handleOllamaModelSelect}
+          onCancel={uiActions.handleOllamaModelCancel}
         />
       </Box>
     );

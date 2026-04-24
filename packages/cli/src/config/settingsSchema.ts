@@ -1976,6 +1976,26 @@ const SETTINGS_SCHEMA = {
             description: 'Whether to use an external authentication flow.',
             showInDialog: false,
           },
+          ollamaModel: {
+            type: 'string',
+            label: 'Ollama Model',
+            category: 'Security',
+            requiresRestart: false,
+            default: undefined as string | undefined,
+            description:
+              'The Ollama model to use when the Ollama auth type is selected.',
+            showInDialog: false,
+          },
+          ollamaHost: {
+            type: 'string',
+            label: 'Ollama Host',
+            category: 'Security',
+            requiresRestart: false,
+            default: undefined as string | undefined,
+            description:
+              'The Ollama server URL (default: http://localhost:11434).',
+            showInDialog: false,
+          },
         },
       },
       enableConseca: {

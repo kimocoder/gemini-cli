@@ -1539,6 +1539,7 @@ export class Config implements McpContext, AgentLoopContext {
     apiKey?: string,
     baseUrl?: string,
     customHeaders?: Record<string, string>,
+    ollamaHost?: string,
   ) {
     // Reset availability service when switching auth
     this.modelAvailabilityService.reset();
@@ -1569,6 +1570,7 @@ export class Config implements McpContext, AgentLoopContext {
       baseUrl,
       customHeaders,
       this.vertexAiRouting,
+      ollamaHost,
     );
     this.contentGenerator = await createContentGenerator(
       newContentGeneratorConfig,

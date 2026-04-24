@@ -26,6 +26,9 @@ Learn all about Gemini CLI in our [documentation](https://geminicli.com/docs/).
   integrations.
 - **💻 Terminal-first**: Designed for developers who live in the command line.
 - **🛡️ Open source**: Apache 2.0 licensed.
+- **🦙 Ollama support**: Run local / self-hosted LLMs (Llama, Mistral, Qwen…)
+  with no Google account or API key required. See
+  [docs/ollama.md](docs/ollama.md).
 
 ## 📦 Installation
 
