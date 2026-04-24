@@ -33,6 +33,10 @@ export function validateAuthMethodWithSettings(
   if (authType === AuthType.USE_GEMINI) {
     return null;
   }
+  // Ollama requires no API key — skip validation
+  if (authType === AuthType.USE_OLLAMA) {
+    return null;
+  }
   return validateAuthMethod(authType);
 }
 
@@ -107,6 +111,17 @@ export const useAuthCommand = (
         const key = await reloadApiKey(); // Use the unified function
         if (!key) {
           setAuthState(AuthState.AwaitingApiKeyInput);
+          return;
+        }
+      }
+
+      // For Ollama, we need a model to be selected before auth is complete.
+      // If we ended up in Unauthenticated with Ollama selected but no model
+      // set, prompt for model selection.
+      if (authType === AuthType.USE_OLLAMA) {
+        const ollamaModel = settings.merged.security.auth.ollamaModel;
+        if (!ollamaModel) {
+          setAuthState(AuthState.AwaitingOllamaModelSelection);
           return;
         }
       }

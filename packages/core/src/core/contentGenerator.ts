@@ -28,6 +28,7 @@ import { determineSurface } from '../utils/surface.js';
 import { RecordingContentGenerator } from './recordingContentGenerator.js';
 import { getVersion, resolveModel } from '../../index.js';
 import type { LlmRole } from '../telemetry/llmRole.js';
+import { OllamaContentGenerator } from './ollamaContentGenerator.js';
 
 /**
  * Interface abstracting the core functionalities for generating content and counting tokens.
@@ -63,6 +64,7 @@ export enum AuthType {
   LEGACY_CLOUD_SHELL = 'cloud-shell',
   COMPUTE_ADC = 'compute-default-credentials',
   GATEWAY = 'gateway',
+  USE_OLLAMA = 'ollama',
 }
 
 /**
@@ -89,6 +91,9 @@ export function getAuthTypeFromEnv(): AuthType | undefined {
   ) {
     return AuthType.COMPUTE_ADC;
   }
+  if (process.env['OLLAMA_HOST'] || process.env['OLLAMA_BASE_URL']) {
+    return AuthType.USE_OLLAMA;
+  }
   return undefined;
 }
 
@@ -100,6 +105,7 @@ export type ContentGeneratorConfig = {
   baseUrl?: string;
   customHeaders?: Record<string, string>;
   vertexAiRouting?: VertexAiRoutingConfig;
+  ollamaHost?: string;
 };
 
 export type VertexAiRequestType = 'dedicated' | 'shared';
@@ -135,6 +141,7 @@ export async function createContentGeneratorConfig(
   baseUrl?: string,
   customHeaders?: Record<string, string>,
   vertexAiRouting?: VertexAiRoutingConfig,
+  ollamaHost?: string,
 ): Promise<ContentGeneratorConfig> {
   const geminiApiKey =
     apiKey ||
@@ -185,6 +192,15 @@ export async function createContentGeneratorConfig(
     contentGeneratorConfig.apiKey = apiKey || 'gateway-placeholder-key';
     contentGeneratorConfig.vertexai = false;
 
+    return contentGeneratorConfig;
+  }
+
+  if (authType === AuthType.USE_OLLAMA) {
+    contentGeneratorConfig.ollamaHost =
+      ollamaHost ||
+      process.env['OLLAMA_HOST'] ||
+      process.env['OLLAMA_BASE_URL'] ||
+      'http://localhost:11434';
     return contentGeneratorConfig;
   }
 
@@ -348,6 +364,19 @@ export async function createContentGenerator(
       });
       return new LoggingContentGenerator(googleGenAI.models, gcConfig);
     }
+
+    if (config.authType === AuthType.USE_OLLAMA) {
+      const ollamaHost =
+        config.ollamaHost ||
+        process.env['OLLAMA_HOST'] ||
+        process.env['OLLAMA_BASE_URL'] ||
+        'http://localhost:11434';
+      return new LoggingContentGenerator(
+        new OllamaContentGenerator(ollamaHost, gcConfig.getModel()),
+        gcConfig,
+      );
+    }
+
     throw new Error(
       `Error creating contentGenerator: Unsupported authType: ${config.authType}`,
     );

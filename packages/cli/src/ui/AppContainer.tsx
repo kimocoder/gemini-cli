@@ -785,7 +785,8 @@ export const AppContainer = (props: AppContainerProps) => {
   // TODO: Consider handling other auth types that should also skip the blocking screen
   const isAuthenticating =
     authState === AuthState.Unauthenticated &&
-    settings.merged.security.auth.selectedType !== AuthType.USE_GEMINI;
+    settings.merged.security.auth.selectedType !== AuthType.USE_GEMINI &&
+    settings.merged.security.auth.selectedType !== AuthType.USE_OLLAMA;
 
   // Session browser and resume functionality
   const isGeminiClientInitialized = config.getGeminiClient()?.isInitialized();
@@ -894,6 +895,50 @@ Logging in with Google... Restarting Gemini CLI to continue.
   );
 
   const handleApiKeyCancel = useCallback(() => {
+    // Go back to auth method selection
+    setAuthState(AuthState.Updating);
+  }, [setAuthState]);
+
+  const resolvedOllamaHost = useMemo(
+    () =>
+      settings.merged.security.auth.ollamaHost ||
+      process.env['OLLAMA_HOST'] ||
+      process.env['OLLAMA_BASE_URL'] ||
+      'http://localhost:11434',
+    [settings.merged.security.auth.ollamaHost],
+  );
+
+  const handleOllamaModelSelect = useCallback(
+    async (model: string) => {
+      try {
+        onAuthError(null);
+        // Save the selected model to settings
+        settings.setValue(
+          SettingScope.User,
+          'security.auth.ollamaModel',
+          model,
+        );
+        // Set the model on config
+        config.setModel(model);
+        await config.refreshAuth(
+          AuthType.USE_OLLAMA,
+          undefined,
+          undefined,
+          undefined,
+          resolvedOllamaHost,
+        );
+        setAuthState(AuthState.Authenticated);
+      } catch (e) {
+        onAuthError(
+          `Failed to connect to Ollama: ${e instanceof Error ? e.message : String(e)}`,
+        );
+        setAuthState(AuthState.Updating);
+      }
+    },
+    [setAuthState, onAuthError, settings, config, resolvedOllamaHost],
+  );
+
+  const handleOllamaModelCancel = useCallback(() => {
     // Go back to auth method selection
     setAuthState(AuthState.Updating);
   }, [setAuthState]);
@@ -2204,6 +2249,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
     !!emptyWalletRequest ||
     isSessionBrowserOpen ||
     authState === AuthState.AwaitingApiKeyInput ||
+    authState === AuthState.AwaitingOllamaModelSelection ||
     !!newAgents;
 
   const hasPendingToolConfirmation = useMemo(
@@ -2438,6 +2484,9 @@ Logging in with Google... Restarting Gemini CLI to continue.
       isAuthDialogOpen,
       isAwaitingApiKeyInput: authState === AuthState.AwaitingApiKeyInput,
       apiKeyDefaultValue,
+      isAwaitingOllamaModelSelection:
+        authState === AuthState.AwaitingOllamaModelSelection,
+      ollamaHost: resolvedOllamaHost,
       editorError,
       isEditorDialogOpen,
       showPrivacyNotice,
@@ -2650,6 +2699,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
       adminSettingsChanged,
       newAgents,
       showIsExpandableHint,
+      resolvedOllamaHost,
     ],
   );
 
@@ -2699,6 +2749,8 @@ Logging in with Google... Restarting Gemini CLI to continue.
       popAllMessages,
       handleApiKeySubmit,
       handleApiKeyCancel,
+      handleOllamaModelSelect,
+      handleOllamaModelCancel,
       setBannerVisible,
       setShortcutsHelpVisible,
       setCleanUiDetailsVisible,
@@ -2791,6 +2843,8 @@ Logging in with Google... Restarting Gemini CLI to continue.
       popAllMessages,
       handleApiKeySubmit,
       handleApiKeyCancel,
+      handleOllamaModelSelect,
+      handleOllamaModelCancel,
       setBannerVisible,
       setShortcutsHelpVisible,
       setCleanUiDetailsVisible,
